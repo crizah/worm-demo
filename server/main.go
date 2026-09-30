@@ -8,11 +8,9 @@ import (
 	"os/signal"
 	"time"
 
-	"server/internal/cron"
 	"server/internal/dbconn"
 	"server/internal/dial"
 	"server/internal/middleware"
-	"server/internal/normalizer"
 	"server/internal/traffic"
 )
 
@@ -46,13 +44,9 @@ func main() {
 	go dialSvc.StartDecay(ctx)
 
 	gen := traffic.NewGenerator(db, dialSvc)
-	gen.Start(ctx) // its own continuous rate-limited worker pool, not a cron.Scheduler task - see internal/traffic
-
-	norm := normalizer.New(db)
-
-	sched := cron.New()
-	sched.Register(cron.Task{Name: "normalizer", Interval: 1 * time.Hour, RunImmediately: true, Run: norm.Tick})
-	sched.Start(ctx)
+	gen.Start(ctx) // its own continuous rate-limited worker pool - see internal/traffic
+	// normalizing runs out-of-process now, via cmd/normalize on the machine's
+	// own cron (infra/cron/normalize.cron) - no in-process scheduler needed here.
 
 	handlers := dial.NewHandlers(dialSvc)
 	mux := http.NewServeMux()

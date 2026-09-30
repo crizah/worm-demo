@@ -1,0 +1,22 @@
+# One-time provisioning: creates the target schema. Run manually once per
+# fresh deploy (`sudo systemctl start worm-provision.service`) - NOT
+# enabled, does not auto-start on boot, no [Install] section on purpose.
+#
+# migrate-data is NOT run here even though it's also "provisioning" -
+# Migrate() does backfill then falls straight into streaming forever, so
+# it can't be a oneshot unit that's expected to exit. worm-resume.service
+# (via run-stream.sh) picks it up as the first real run instead.
+#
+# adjust WorkingDirectory/ExecStart to your actual deploy path.
+
+[Unit]
+Description=worm migrate-schema (one-time, manual)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=worm
+Group=worm
+WorkingDirectory=/opt/worm-demo/worm
+ExecStart=/opt/worm-demo/worm/worm migrate-schema

@@ -1,0 +1,5 @@
+# hourly normalize pass. install with: crontab -e (as the worm user),
+# or drop as /etc/cron.d/worm-normalize (needs a username column then).
+# adjust the path and DEMO_WRITER_CONN_STR to your actual deploy values.
+
+0 * * * * DEMO_WRITER_CONN_STR='postgres://demo_writer:CHANGE_ME@localhost:5432/worm_demo?sslmode=disable' /opt/worm-demo/server/normalize >> /var/log/worm-normalize.log 2>&1

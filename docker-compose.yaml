@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: worm-demo-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: worm_demo
+    ports:
+      - "5432:5432"
+    # tmpfs on purpose - ephemeral, normalize/reset already assume nothing
+    # here needs to survive a restart. synchronous_commit=off is safe
+    # specifically because of that - there was never a durability
+    # guarantee to give up.
+    command: ["postgres", "-c", "wal_level=logical", "-c", "synchronous_commit=off"]
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d worm_demo"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

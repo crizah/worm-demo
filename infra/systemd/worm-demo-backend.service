@@ -1,0 +1,27 @@
+# The Go demo backend (traffic generator, dial HTTP API, CORS/rate-limit
+# middleware). Not worm itself - see worm-resume.service for that.
+#
+# adjust WorkingDirectory/ExecStart and the env vars to your actual deploy
+# path/values (DEMO_WRITER_CONN_STR must point at the restricted
+# demo_writer role - see server/sql/restricted_role.sql).
+
+[Unit]
+Description=worm demo backend
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=worm
+Group=worm
+WorkingDirectory=/opt/worm-demo/server
+Environment=DEMO_WRITER_CONN_STR=postgres://demo_writer:CHANGE_ME@localhost:5432/worm_demo?sslmode=disable
+Environment=ADDR=:8080
+ExecStart=/opt/worm-demo/server/demo-backend
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

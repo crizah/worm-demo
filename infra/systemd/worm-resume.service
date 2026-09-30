@@ -1,0 +1,26 @@
+# The continuous stream, forever. Run worm-provision.service once first.
+# See run-stream.sh for why ExecStart is the script, not `worm
+# migrate-resume` directly.
+#
+# adjust WorkingDirectory/ExecStart to your actual deploy path.
+
+[Unit]
+Description=worm streaming (migrate-data first run, migrate-resume after)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=worm
+Group=worm
+WorkingDirectory=/opt/worm-demo/worm
+ExecStart=/opt/worm-demo/worm/run-stream.sh
+Restart=always
+RestartSec=5
+# a clean SIGINT lets worm's context-cancellation shutdown path run
+# (see cli/root.go's signal.NotifyContext) instead of a hard kill
+KillSignal=SIGINT
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
