@@ -11,9 +11,21 @@ import (
 	"server/internal/cron"
 	"server/internal/dbconn"
 	"server/internal/dial"
+	"server/internal/middleware"
 	"server/internal/normalizer"
 	"server/internal/traffic"
 )
+
+// CORS: edit to add/remove the frontend's domain(s).
+var allowedOrigins = map[string]bool{
+	"http://localhost:3000": true, // local frontend dev
+	// "https://your-demo.vercel.app": true,
+}
+
+// Rate-limit bypass - edit to add trusted dev/admin IPs.
+var trustedIPs = map[string]bool{
+	// "1.2.3.4": true,
+}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -47,11 +59,21 @@ func main() {
 	mux.HandleFunc("GET /api/traffic/dial", handlers.Get)
 	mux.HandleFunc("POST /api/traffic/dial", handlers.Set)
 
+	rateLimited := middleware.RateLimit(ctx, middleware.RateLimitConfig{
+		PerIPRate:    2,
+		PerIPBurst:   5,
+		GlobalRate:   30,
+		GlobalBurst:  50,
+		MaxInFlight:  50,
+		AllowlistIPs: trustedIPs,
+	})(mux)
+	var handler http.Handler = middleware.CORS(allowedOrigins)(rateLimited)
+
 	addr := os.Getenv("ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
-	srv := &http.Server{Addr: addr, Handler: mux}
+	srv := &http.Server{Addr: addr, Handler: handler}
 
 	go func() {
 		<-ctx.Done()

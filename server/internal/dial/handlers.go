@@ -12,10 +12,9 @@ type stateResponse struct {
 }
 
 // Handlers wires Service to HTTP. GET returns current state, POST sets a
-// new desired value (clamped server-side, see Service.Set).
-//
-// TODO: rate limit POST per visitor (IP/session token) before this goes
-// public - deliberately not done yet, per docs/demo-app-plan.md.
+// new desired value (requests/sec), rejected outright (not silently
+// clamped) if it's out of range. Rate limiting itself is a middleware
+// concern - see internal/middleware.
 type Handlers struct {
 	svc *Service
 }
@@ -36,6 +35,14 @@ func (h *Handlers) Set(w http.ResponseWriter, r *http.Request) {
 	var req setRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad request body", http.StatusBadRequest)
+		return
+	}
+	if req.Value < 0 {
+		http.Error(w, "value must not be negative", http.StatusBadRequest)
+		return
+	}
+	if req.Value > Max {
+		http.Error(w, "unfortunately our hardware doesn't support safely going above this limit", http.StatusNotFound)
 		return
 	}
 

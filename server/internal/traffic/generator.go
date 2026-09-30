@@ -19,18 +19,10 @@ import (
 	"time"
 
 	"golang.org/x/time/rate"
-
-	"server/internal/dial"
 )
 
 const (
 	workerCount = 6 // concurrent writers sharing the rate limiter - enough to overlap round-trip latency at the high end without being backfill-sized
-
-	// requests/sec at the dial's resting baseline and its hard ceiling -
-	// targetRate interpolates between these for whatever the dial is
-	// currently set to.
-	baselineRatePerSec = 100.0
-	maxRatePerSec      = 600.0
 
 	idCacheSize         = 200
 	idCacheRefreshEvery = 5 * time.Second
@@ -60,7 +52,7 @@ func NewGenerator(db *sql.DB, dial dialReader) *Generator {
 	return &Generator{
 		db:         db,
 		dial:       dial,
-		limiter:    rate.NewLimiter(rate.Limit(baselineRatePerSec), workerCount),
+		limiter:    rate.NewLimiter(rate.Limit(dial.Get()), workerCount),
 		projectIDs: newIDCache(),
 		userIDs:    newIDCache(),
 		taskIDs:    newIDCache(),
@@ -81,6 +73,9 @@ func (g *Generator) Start(ctx context.Context) {
 	}
 }
 
+// syncRate keeps the limiter matched to the dial. The dial's own units are
+// already requests/sec (see internal/dial), so this is a direct copy, no
+// interpolation needed.
 func (g *Generator) syncRate(ctx context.Context) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -89,24 +84,9 @@ func (g *Generator) syncRate(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			g.limiter.SetLimit(rate.Limit(targetRate(g.dial.Get())))
+			g.limiter.SetLimit(rate.Limit(g.dial.Get()))
 		}
 	}
-}
-
-// targetRate linearly interpolates between (dial.Baseline -> baselineRatePerSec)
-// and (dial.Max -> maxRatePerSec), so the dial's resting position lands
-// close to the advertised baseline and its ceiling lands exactly on the
-// advertised max.
-func targetRate(dialValue int) float64 {
-	if dialValue <= dial.Baseline {
-		if dial.Baseline == 0 {
-			return baselineRatePerSec
-		}
-		return baselineRatePerSec * float64(dialValue) / float64(dial.Baseline)
-	}
-	frac := float64(dialValue-dial.Baseline) / float64(dial.Max-dial.Baseline)
-	return baselineRatePerSec + frac*(maxRatePerSec-baselineRatePerSec)
 }
 
 func (g *Generator) worker(ctx context.Context) {

@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	Baseline = 10  // resting traffic level, 0-100 scale
-	Max      = 100 // hard server-side ceiling - the UI's own max is only a suggestion, this is the real one
+	Baseline = 100 // resting traffic level, requests/sec
+	Max      = 600 // hard server-side ceiling, requests/sec - the UI's own max is only a suggestion, this is the real one
 
 	idleThreshold = 60 * time.Second // no interaction for this long -> start decaying back to Baseline
 	decayInterval = 5 * time.Second
