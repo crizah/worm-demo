@@ -36,6 +36,8 @@ func main() {
 	go dialSvc.StartDecay(ctx)
 
 	gen := traffic.NewGenerator(db, dialSvc)
+	gen.Start(ctx) // its own continuous rate-limited worker pool, not a cron.Scheduler task - see internal/traffic
+
 	norm := normalizer.New(db)
 
 	wormBin := os.Getenv("WORM_BIN")
@@ -50,7 +52,6 @@ func main() {
 	resetJob := reset.New(sup)
 
 	sched := cron.New()
-	sched.Register(cron.Task{Name: "traffic-generator", Interval: 5 * time.Second, Run: gen.Tick})
 	sched.Register(cron.Task{Name: "normalizer", Interval: 5 * time.Minute, Run: norm.Tick})
 	sched.Register(cron.Task{Name: "reset", Interval: 2 * time.Hour, RunImmediately: true, Run: resetJob.Tick})
 	sched.Start(ctx)
