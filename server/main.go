@@ -12,9 +12,7 @@ import (
 	"server/internal/dbconn"
 	"server/internal/dial"
 	"server/internal/normalizer"
-	"server/internal/reset"
 	"server/internal/traffic"
-	"server/internal/wormproc"
 )
 
 func main() {
@@ -40,20 +38,8 @@ func main() {
 
 	norm := normalizer.New(db)
 
-	wormBin := os.Getenv("WORM_BIN")
-	if wormBin == "" {
-		log.Fatal("WORM_BIN not set - path to the worm binary")
-	}
-	wormDir := os.Getenv("WORM_DIR")
-	if wormDir == "" {
-		log.Fatal("WORM_DIR not set - working directory to run worm in (needs its .env and ./.data alongside it)")
-	}
-	sup := wormproc.New(wormBin, wormDir)
-	resetJob := reset.New(sup)
-
 	sched := cron.New()
-	sched.Register(cron.Task{Name: "normalizer", Interval: 5 * time.Minute, Run: norm.Tick})
-	sched.Register(cron.Task{Name: "reset", Interval: 2 * time.Hour, RunImmediately: true, Run: resetJob.Tick})
+	sched.Register(cron.Task{Name: "normalizer", Interval: 1 * time.Hour, RunImmediately: true, Run: norm.Tick})
 	sched.Start(ctx)
 
 	handlers := dial.NewHandlers(dialSvc)
