@@ -12,6 +12,8 @@ import (
 	"server/internal/dial"
 	"server/internal/middleware"
 	"server/internal/traffic"
+
+	"github.com/joho/godotenv"
 )
 
 // CORS: edit to add/remove the frontend's domain(s).
@@ -26,6 +28,7 @@ var trustedIPs = map[string]bool{
 }
 
 func main() {
+	godotenv.Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
