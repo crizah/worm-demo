@@ -11,9 +11,12 @@ import (
 
 	"server/internal/dbconn"
 	"server/internal/normalizer"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
 	connStr := os.Getenv("DEMO_WRITER_CONN_STR")
 	if connStr == "" {
 		log.Fatal("DEMO_WRITER_CONN_STR not set - this must point at the restricted demo_writer role, see sql/restricted_role.sql")

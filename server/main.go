@@ -11,6 +11,7 @@ import (
 	"server/internal/dbconn"
 	"server/internal/dial"
 	"server/internal/middleware"
+	"server/internal/stats"
 	"server/internal/traffic"
 
 	"github.com/joho/godotenv"
@@ -52,9 +53,11 @@ func main() {
 	// own cron (infra/cron/normalize.cron) - no in-process scheduler needed here.
 
 	handlers := dial.NewHandlers(dialSvc)
+	statsHandlers := stats.NewHandlers(db)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/traffic/dial", handlers.Get)
 	mux.HandleFunc("POST /api/traffic/dial", handlers.Set)
+	mux.HandleFunc("GET /api/stats/stream", statsHandlers.Stream)
 
 	rateLimited := middleware.RateLimit(ctx, middleware.RateLimitConfig{
 		PerIPRate:    2,

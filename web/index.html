@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>worm</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Lilex:wght@400;500;600;700&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="style.css" />
+	<script src="env.js"></script>
+</head>
+<body>
+	<header class="toolbar">
+		<div class="toolbar-brand">worm</div>
+		<nav class="toolbar-tabs">
+			<button class="tab active" data-view="demo">demo</button>
+			<button class="tab" data-view="process">process</button>
+		</nav>
+	</header>
+
+	<main>
+		<section id="view-demo" class="view active">
+			<div class="demo-grid">
+				<div class="panel panel-pulse">
+					<canvas id="pulse"></canvas>
+					<div class="pulse-overlay">
+						<div class="live-number" id="total-writes">0</div>
+						<div class="live-label">rows replicated</div>
+					</div>
+				</div>
+
+				<div class="panel panel-dial">
+					<div class="dial-header">
+						<span>traffic</span>
+						<span id="dial-readout">100 req/s</span>
+					</div>
+					<input type="range" id="dial-slider" min="0" max="600" value="100" step="10" />
+					<div class="dial-scale">
+						<span>0</span>
+						<span>baseline</span>
+						<span>600</span>
+					</div>
+					<div class="dial-rate">
+						<span id="rate-number">0</span>
+						<span class="dial-rate-label">writes/sec</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="view-process" class="view">
+			<div class="process-copy">
+				<h1>how worm replicates</h1>
+				<ol>
+					<li><strong>migrate-schema</strong> — reads the source schema, recreates it on the target.</li>
+					<li><strong>migrate-data</strong> — snapshots and backfills existing rows, then opens a logical replication slot and streams every insert/update/delete from that point forward.</li>
+					<li><strong>migrate-resume</strong> — picks the stream back up from the last confirmed position after a restart. nothing is replayed, nothing is lost.</li>
+				</ol>
+				<p>the dial on the demo tab controls a live traffic generator writing directly to the source postgres database. every one of those writes is what you're watching get replicated in real time.</p>
+			</div>
+		</section>
+	</main>
+
+	<script src="app.js"></script>
+</body>
+</html>

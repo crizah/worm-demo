@@ -20,4 +20,11 @@ seed:
 role:
 	psql "$(DB_URL)" -f ./server/sql/restricted_role.sql
 
-.PHONY: up down seed role
+# generates web/env.js from web/.env (copy web/.env.example first if it
+# doesn't exist yet), then serves web/ for local dev on :3000 - matches
+# the CORS allowlist in server/main.go.
+fe:
+	cd web && ./gen-env.sh
+	cd web && python3 -m http.server 3000
+
+.PHONY: up down seed role fe

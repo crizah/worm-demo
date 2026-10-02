@@ -5,7 +5,7 @@
 -- Run this against the demo Postgres instance once, as a superuser, AFTER
 -- scripts/dev_schema.sql (from the main Worm repo) has been applied.
 
-CREATE ROLE demo_writer LOGIN PASSWORD '<set a real password, not this - put it in DEMO_WRITER_CONN_STR>';
+CREATE ROLE demo_writer LOGIN PASSWORD 'pqpq';
 
 GRANT USAGE ON SCHEMA public TO demo_writer;
 
@@ -19,7 +19,17 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
     tags,
     task_tags,
     task_comments,
-    audit_logs
+    audit_logs,
+    roles,
+    webhooks,
+    webhook_deliveries,
+    integrations,
+    api_keys,
+    user_roles,
+    milestones,
+    task_dependencies,
+    notifications,
+    time_entries
 TO demo_writer;
 
 -- explicitly NOT granted: DROP, TRUNCATE, ALTER, CREATE, REFERENCES on
